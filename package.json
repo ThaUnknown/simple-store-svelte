@@ -1,0 +1,29 @@
+{
+  "name": "simple-store-svelte",
+  "version": "1.0.0",
+  "description": "Simpler store using setters and getters for Svelte.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThaUnknown/simple-store-svelte.git"
+  },
+  "keywords": [
+    "svelte",
+    "store",
+    "gette",
+    "setter",
+    "sveltejs",
+    "writable",
+    "readable",
+    "derived"
+  ],
+  "author": "ThaUnknown",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ThaUnknown/simple-store-svelte/issues"
+  },
+  "homepage": "https://github.com/ThaUnknown/simple-store-svelte#readme"
+}
