@@ -137,7 +137,7 @@ function derived (stores, fn, initialValue) {
 Object.defineProperty(exports, 'get', {
   enumerable: true,
   get: function (store) {
-    return store.value
+    return store?.value
   }
 })
 exports.derived = derived
