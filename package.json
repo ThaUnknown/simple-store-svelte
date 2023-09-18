@@ -1,6 +1,6 @@
 {
   "name": "simple-store-svelte",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simpler store using setters and getters for Svelte.",
   "main": "index.js",
   "scripts": {
