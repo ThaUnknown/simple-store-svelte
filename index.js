@@ -1,7 +1,3 @@
-'use strict'
-
-Object.defineProperty(exports, '__esModule', { value: true })
-
 function noop () { }
 
 function safeNotEqual (a, b) {
@@ -29,22 +25,41 @@ function subscribe (store, ...callbacks) {
 const subscriberQueue = []
 /**
  * Creates a `Readable` store that allows reading by subscription.
- * @param value initial value
- * @param {StartStopNotifier}start start and stop notifications for subscriptions
+ *
+ * https://svelte.dev/docs/svelte-store#readable
+ * @template T
+ * @param {T} [value] initial value
+ * @param {import('./public.js').StartStopNotifier<T>} [start]
+ * @returns {import('./public.js').Readable<T>}
  */
-function readable (value, start) {
+export function readable (value, start) {
+  const writ = writable(value, start)
   return {
-    subscribe: writable(value, start).subscribe
+    subscribe: writ.subscribe,
+    get value () {
+      return writ.value
+    }
   }
 }
+
 /**
  * Create a `Writable` store that allows both updating and reading by subscription.
- * @param {*=}val initial value
- * @param {StartStopNotifier=}start start and stop notifications for subscriptions
+ *
+ * https://svelte.dev/docs/svelte-store#writable
+ * @template T
+ * @param {T} [val] initial value
+ * @param {import('./public.js').StartStopNotifier<T>} [start]
+ * @returns {import('./public.js').Writable<T>}
  */
-function writable (val, start = noop) {
+export function writable (val, start = noop) {
+  /** @type {import('./public.js').Unsubscriber} */
   let stop
+  /** @type {Set<import('./private.js').SubscribeInvalidateTuple<T>>} */
   const subscribers = new Set()
+  /**
+   * @param {T} newValue
+   * @returns {void}
+   */
   function set (newValue) {
     if (safeNotEqual(val, newValue)) {
       val = newValue
@@ -63,19 +78,31 @@ function writable (val, start = noop) {
       }
     }
   }
+
+  /**
+   * @param {import('./public.js').Updater<T>} fn
+   * @returns {void}
+   */
   function update (fn) {
     set(fn(val))
   }
+
+  /**
+   * @param {import('./public.js').Subscriber<T>} run
+   * @param {import('./private.js').Invalidator<T>} [invalidate]
+   * @returns {import('./public.js').Unsubscriber}
+   */
   function subscribe (run, invalidate = noop) {
+    /** @type {import('./private.js').SubscribeInvalidateTuple<T>} */
     const subscriber = [run, invalidate]
     subscribers.add(subscriber)
     if (subscribers.size === 1) {
-      stop = start(set) || noop
+      stop = start(set, update) || noop
     }
     run(val)
     return () => {
       subscribers.delete(subscriber)
-      if (subscribers.size === 0) {
+      if (subscribers.size === 0 && stop) {
         stop()
         stop = null
       }
@@ -93,13 +120,15 @@ function writable (val, start = noop) {
     }
   }
 }
-function derived (stores, fn, initialValue) {
+export function derived (stores, fn, initialValue) {
   const single = !Array.isArray(stores)
-  const storesArray = single
-    ? [stores]
-    : stores
+  /** @type {Array<import('./public.js').Readable<any>>} */
+  const storesArray = single ? [stores] : stores
+  if (!storesArray.every(Boolean)) {
+    throw new Error('derived() expects stores as input, got a falsy value')
+  }
   const auto = fn.length < 2
-  return readable(initialValue, (set) => {
+  return readable(initialValue, (set, update) => {
     let inited = false
     const values = []
     let pending = 0
@@ -109,7 +138,7 @@ function derived (stores, fn, initialValue) {
         return
       }
       cleanup()
-      const result = fn(single ? values[0] : values, set)
+      const result = fn(single ? values[0] : values, set, update)
       if (auto) {
         set(result)
       } else {
@@ -130,16 +159,39 @@ function derived (stores, fn, initialValue) {
     return function stop () {
       runAll(unsubscribers)
       cleanup()
+      // We need to set this to false because callbacks can still happen despite having unsubscribed:
+      // Callbacks might already be placed in the queue which doesn't know it should no longer
+      // invoke this derived store.
+      inited = false
     }
   })
 }
 
-Object.defineProperty(exports, 'get', {
-  enumerable: true,
-  get: function (store) {
-    return store?.value
+/**
+ * Takes a store and returns a new one derived from the old one that is readable.
+ *
+ * https://svelte.dev/docs/svelte-store#readonly
+ * @template T
+ * @param {import('./public.js').Readable<T>} store  - store to make readonly
+ * @returns {import('./public.js').Readable<T>}
+ */
+export function readonly (store) {
+  return {
+    subscribe: store.subscribe.bind(store),
+    get value () {
+      return store.value
+    }
   }
-})
-exports.derived = derived
-exports.readable = readable
-exports.writable = writable
+}
+
+/**
+ * Get the current value from a store by subscribing and immediately unsubscribing.
+ *
+ * https://svelte.dev/docs/svelte-store#get
+ * @template T
+ * @param {import('./public.js').Readable<T>} store
+ * @returns {T}
+ */
+export function get (store) {
+  return store?.value
+}
