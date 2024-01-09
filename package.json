@@ -1,9 +1,9 @@
 {
   "name": "simple-store-svelte",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "Simpler store using setters and getters for Svelte.",
-  "main": "index",
-  "types": "index",
+  "main": "index.js",
+  "types": "public.d.ts",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

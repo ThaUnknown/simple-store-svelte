@@ -52,4 +52,26 @@ export interface Writable<T> extends Readable<T> {
 	set value(value: T): void;
 }
 
-export * from './index.js';
+export function readable<T>(value?: T | undefined, start?: StartStopNotifier<T> | undefined): Readable<T>;
+/**
+ * Create a `Writable` store that allows both updating and reading by subscription.
+ *
+ * https://svelte.dev/docs/svelte-store#writable
+ * @param value initial value
+ * */
+export function writable<T>(value?: T | undefined, start?: StartStopNotifier<T> | undefined): Writable<T>;
+export function derived<S extends Stores, T>(stores: S, fn: (values: StoresValues<S>, set: (value: T) => void, update: (fn: Updater<T>) => void) => Unsubscriber | void, initial_value?: T | undefined): Readable<T>;
+export function derived<S extends Stores, T>(stores: S, fn: (values: StoresValues<S>) => T, initial_value?: T | undefined): Readable<T>;
+/**
+ * Takes a store and returns a new one derived from the old one that is readable.
+ *
+ * https://svelte.dev/docs/svelte-store#readonly
+ * @param store  - store to make readonly
+ * */
+export function readonly<T>(store: Readable<T>): Readable<T>;
+/**
+ * Get the current value from a store by subscribing and immediately unsubscribing.
+ *
+ * https://svelte.dev/docs/svelte-store#get
+ * */
+export function get<T>(store: Readable<T>): T;
